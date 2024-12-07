@@ -27,11 +27,18 @@ struct frac {
     frac operator/(const frac& other) const {
         return frac(a * other.b, b * other.a);
     }
+    
+    // 重载输出
+    friend ostream & operator << (ostream && os, const frac & x) {
+        os << x.a << '/' << x.b;
+        return os;
+    }
+    // 重载输入
+    friend istream & operator >> (istream && is, frac & x) {
+        is >> x.a >> x.b;
+        return is;
+    }
 };
-
-std::ostream & operator << (std::ostream && os, const frac & x) {
-    os << x.a << '/' << x.b;
-}
 
 // 定义 monomial 结构体
 struct mono {
@@ -43,7 +50,7 @@ struct mono {
         for (int i = 2; i < sqrt_r; i++) {
             if (r % (i * i) == 0) {
                 r /= (i * i);
-                frac a = frac(i, 1);
+                frac a(i, 1);
                 coeff = coeff * a;
             }
         }
@@ -59,6 +66,12 @@ struct mono {
     mono operator+(const mono& other) const {
         assert(r != other.r);
         return {r, coeff + other.coeff};
+    }
+
+    // 重载输出
+    friend ostream & operator << (ostream && os, const mono & x) {
+        os << x.coeff.a << "/" << x.coeff.b  << " " << "sqrt(" << x.r << ")";
+        return os;
     }
 };
 
@@ -118,7 +131,7 @@ struct poly {
             if (i > 0) {
                 cout << " + ";
             }
-            cout << terms[i].coeff << "sqrt(" << terms[i].r << ")";
+            cout << terms[i].coeff.a << "/" << terms[i].coeff.b << " " << "sqrt(" << terms[i].r << ")";
         }
         cout << endl;
     }
@@ -129,7 +142,7 @@ struct matrix {
     int rows, cols;
     vector<vector<poly>> data;
 
-    matrix(int r, int c): rows(r), cols(c), data(r, vector<poly>(c, poly)) {}
+    matrix(int r, int c): rows(r), cols(c), data(r, vector<poly>(c)) {}
 
     void print() const {
         for (int i = 0; i < rows; i++) {
@@ -156,10 +169,6 @@ matrix matrixMultiply (const matrix& a, const matrix& b) {
         }
     }
     return result;
-}
-
-void test () {
-    assert()
 }
 
 int main () {
