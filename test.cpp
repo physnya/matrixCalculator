@@ -82,9 +82,9 @@ void reduceFrac (int &a, int &b) {
 
 // mono 有关的的函数声明
 void reduceMono (int &r, frac &coeff);
-bool is_square(unsigned a);
-bool is_prime(unsigned a);
-void simple(unsigned &out, unsigned &in, unsigned &up);
+bool is_square (unsigned a);
+bool is_prime (unsigned a);
+void simple (unsigned &out, unsigned &in, unsigned &up);
 
 // 定义 monomial 结构体
 struct mono {
@@ -158,10 +158,10 @@ void reduceMono (int &r, frac &coeff) {
     r = in;
 }
 
-bool is_square(unsigned a) {
+bool is_square (unsigned a) {
 	return (sqrt(a) - int(sqrt(a)) == 0);
 }
-bool is_prime(unsigned a) {
+bool is_prime (unsigned a) {
 	unsigned i = 2;
 	while(i < a) {
 		if(a % i == 0) {
@@ -175,7 +175,7 @@ bool is_prime(unsigned a) {
 		return false;
     }
 }
-void simple(unsigned &out, unsigned &in, unsigned &up) {
+void simple (unsigned &out, unsigned &in, unsigned &up) {
 	unsigned int k;
 	unsigned in2 = in;
 	if (is_square(in)) {
@@ -192,7 +192,7 @@ void simple(unsigned &out, unsigned &in, unsigned &up) {
 	    	return;
         }
 		k = 0;
-		if(!is_prime(i)) {
+		if (!is_prime(i)) {
 		    continue;
         }
  		in2 = in;
@@ -201,55 +201,27 @@ void simple(unsigned &out, unsigned &in, unsigned &up) {
  			++k;
 	 	}
 	 	in = in2;
-	 	if(k >= up) {
+	 	if (k >= up) {
 	 		out *= pow(i, k / up);
 	 		in /= pow(i, k - k % up);
 		}
 	}
 }
 
-// 定义 polynomial 结构体
+// poly 有关的函数声明
+
+// 定义 poly 结构体
 struct poly {
     vector<mono> terms;
 
-    poly operator+(poly& other) {
-        poly result;
-        result.terms.reserve(terms.size() + other.terms.size());
-        auto it1 = terms.begin();
-        auto it2 = other.terms.begin();
-
-        while (it1 != terms.end() && it2 != other.terms.end()) {
-            if (it1->r < it2->r) {
-                result.terms.push_back(*it1++);
-            } else if (it1->r > it2->r) {
-                result.terms.push_back(*it2++);
-            } else {
-                mono sum = *it1 + *it2;
-                if (sum.coeff.a != 0) { // 只添加非零项
-                    result.terms.push_back(sum);
-                }
-                ++it1;
-                ++it2;
-            }
-        }
-
-        result.terms.insert(result.terms.end(), it1, terms.end());
-        result.terms.insert(result.terms.end(), it2, other.terms.end());
-
-        // 移除零项并简化
-        result.simplify();
-        return result;
-    }
-
-    poly operator*(poly &other) {
-        poly result;
-        for (auto& m1 : terms) {
-            for (auto& m2 : other.terms) {
-                result.terms.push_back(m1 * m2);
-            }
-        }
-        return result;
-    }
+    poly () = default;
+    
+    // 声明运算符重载
+    poly operator+ (poly );
+	poly operator- (poly );
+	poly operator* (poly );
+    friend ostream & operator << (ostream & os, poly );
+    friend istream & operator >> (istream & os, poly & );
 
     // 简化 polynomial
     void simplify() {
@@ -266,58 +238,99 @@ struct poly {
             }
             cout << terms[i].coeff.a << "/" << terms[i].coeff.b << " " << "sqrt(" << terms[i].r << ")";
         }
-        cout << endl;
     }
 };
 
-// 定义 matrix 结构体
-struct matrix {
-    int rows, cols;
-    vector<vector<poly>> data;
+poly poly :: operator+(poly other) {
+    poly result;
+    result.terms.reserve(terms.size() + other.terms.size());
+    auto it1 = terms.begin();
+    auto it2 = other.terms.begin();
 
-    matrix(int r, int c): rows(r), cols(c), data(r, vector<poly>(c)) {}
-
-    void print() {
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                data[i][j].print();
-                cout << " ";
+    while (it1 != terms.end() && it2 != other.terms.end()) {
+        if (it1->r < it2->r) {
+            result.terms.push_back(*it1++);
+        } else if (it1->r > it2->r) {
+            result.terms.push_back(*it2++);
+        } else {
+            mono sum = *it1 + *it2;
+            if (sum.coeff.a != 0) { // 只添加非零项
+                result.terms.push_back(sum);
             }
-            cout << endl;
+            ++it1;
+            ++it2;
         }
     }
-};
 
-// 定义矩阵乘法
-matrix matrixMultiply (const matrix& a, const matrix& b) {
-    if (a.cols != b.rows) {
-        cout << "Error." << endl;
-    }
-    matrix result (a.rows, b.cols);
-    for (int i = 0; i < a.rows; i++) {
-        for (int j = 0; j < b.cols; j++) {
-            for (int k = 0; k < a.cols; k++) {
-                result.data[i][j] = result.data[i][j] + a.data[i][k] * b.data[k][j];
+    result.terms.insert(result.terms.end(), it1, terms.end());
+    result.terms.insert(result.terms.end(), it2, other.terms.end());
+
+    // 移除零项并简化
+    result.simplify();
+    return result;
+}
+poly poly :: operator-(poly other) {
+    poly result;
+    result.terms.reserve(terms.size() + other.terms.size());
+    auto it1 = terms.begin();
+    auto it2 = other.terms.begin();
+
+    while (it1 != terms.end() && it2 != other.terms.end()) {
+        if (it1->r < it2->r) {
+            result.terms.push_back(*it1++);
+        } else if (it1->r > it2->r) {
+            result.terms.push_back(*it2++);
+        } else {
+            mono sum = *it1 - *it2;
+            if (sum.coeff.a != 0) { // 只添加非零项
+                result.terms.push_back(sum);
             }
+            ++it1;
+            ++it2;
+        }
+    }
+
+    result.terms.insert(result.terms.end(), it1, terms.end());
+    result.terms.insert(result.terms.end(), it2, other.terms.end());
+
+    // 移除零项并简化
+    result.simplify();
+    return result;
+}
+poly poly :: operator*(poly other) {
+    poly result;
+    for (auto& m1 : terms) {
+        for (auto& m2 : other.terms) {
+            result.terms.push_back(m1 * m2);
         }
     }
     return result;
 }
-
-int test () {
-    frac a, b;
-    cin >> a >> b;
+ostream & operator << (ostream & os, poly x) {
+    for (size_t i = 0; i < x.terms.size(); ++i) {
+        if (i > 0) {
+            cout << " + ";
+        }
+        cout << x.terms[i];
+    }
+}
+istream & operator >> (istream & is, poly & x) {
     
-    cout << (a * b) << endl;
-    cout << (a + b) << endl;
-    cout << (a / b) << endl;
-    cout << (a - b) << endl;
-
-    return 0;
 }
 
 int main () {
-    test();
+    mono a, b;
+    
+    cin >> a >> b;
+
+    cout << sqrt(a.r) << endl;
+
+    cout << (a + b) << endl;
+    cout << (a - b) << endl;
+    cout << (a * b) << endl;
+    cout << (a / b) << endl;
+
+    system("pause");
 
     return 0;
 }
